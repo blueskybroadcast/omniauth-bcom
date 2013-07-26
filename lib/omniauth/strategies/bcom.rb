@@ -6,19 +6,19 @@ module OmniAuth
       option :client_options, {
         :site => 'https://b-comtest.mci-group.com',
         :authorize_url => '/OAuth/StartOAuthLogin.aspx',
-        :token_url => '/OAuth/API/GetAccessToken'
+        :token_url => '/OAuth/API/GetAccessToken',
+        :user_info_url => '/OAuth/API/GetUserInfo'
       }
 
       uid { raw_info['id'] }
 
+      name {'bcom'}
+
       info do
         {
-          :first_name => raw_info['firstName'],
-          :last_name  => raw_info['lastName'],
-          :name       => raw_info['name'],
-          :email      => (raw_info['contact'] || {})['email'],
-          :image      => raw_info['photo'],
-          :location   => raw_info['homeCity']
+          :first_name => raw_info['first_name'],
+          :last_name  => raw_info['last_name'],
+          :email      => raw_info['email']
         }
       end
 
@@ -26,26 +26,62 @@ module OmniAuth
         { :raw_info => raw_info }
       end
 
+      def creds
+        self.access_token
+      end
+
       def request_phase
-        options[:authorize_params] = client_params.merge(options[:authorize_params])
         super
       end
 
+      def callback_phase
+        if request.params['code']
+          parsed_response = JSON.parse(HTTParty.get(token_url,
+            :query => {
+              :client_id => options[:client_id],
+              :redirect_uri => callback_url,
+              :client_secret => options[:client_secret],
+              :code => request.params['code']
+            }
+          ))
+
+          self.access_token = {
+            :token => parsed_response['access_token'],
+            :token_expires => parsed_response['expires_in']
+          }
+
+          self.env['omniauth.auth'] = auth_hash
+          call_app!
+        else
+          fail!(:invalid_credentials)
+        end
+      end
+
       def auth_hash
-        OmniAuth::Utils.deep_merge(super, client_params.merge({
-          :grant_type => 'authorization_code'}))
+        hash = AuthHash.new(:provider => name, :uid => uid)
+        hash.info = info
+        hash.credentials = creds
+        hash
       end
 
       def raw_info
-        access_token.options[:mode] = :query
-        access_token.options[:param_name] = :oauth_token
-        # @raw_info ||= access_token.get('https://api.foursquare.com/v2/users/self').parsed['response']['user']
+        @raw_info ||= JSON.parse(HTTParty.get(user_info_url,
+          :headers => { "Authorization" => access_token[:token] }
+        ))
       end
 
       private
 
       def client_params
         {:client_id => options[:client_id], :redirect_uri => callback_url ,:response_type => "code"}
+      end
+
+      def token_url
+        "#{options.client_options.site}#{options.client_options.token_url}"
+      end
+
+      def user_info_url
+        "#{options.client_options.site}#{options.client_options.user_info_url}"
       end
     end
   end
