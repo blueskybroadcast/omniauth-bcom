@@ -1,4 +1,5 @@
 require 'omniauth-oauth2'
+require 'httparty'
 
 module OmniAuth
   module Strategies
