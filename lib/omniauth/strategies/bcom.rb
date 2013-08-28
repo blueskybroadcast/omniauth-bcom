@@ -17,9 +17,10 @@ module OmniAuth
 
       info do
         {
-          :first_name => raw_info['first_name'],
-          :last_name  => raw_info['last_name'],
-          :email      => raw_info['email']
+          :first_name   => raw_info['first_name'],
+          :last_name    => raw_info['last_name'],
+          :email        => raw_info['email'],
+          :event_codes  => raw_info['participant_event_codes']
         }
       end
 
@@ -66,9 +67,7 @@ module OmniAuth
       end
 
       def raw_info
-        @raw_info ||= JSON.parse(HTTParty.get(user_info_url,
-          :headers => { "Authorization" => access_token[:token] }
-        ))
+        @raw_info ||= Omniauth::Api::Client.get_user_info(access_token[:token])
       end
 
       private
