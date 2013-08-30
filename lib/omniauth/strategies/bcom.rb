@@ -33,7 +33,8 @@ module OmniAuth
       end
 
       def request_phase
-        super
+        event_code = session['omniauth.params']['eventcode']
+        redirect client.auth_code.authorize_url({:redirect_uri => callback_url, :eventcode => event_code}.merge(authorize_params))
       end
 
       def callback_phase
