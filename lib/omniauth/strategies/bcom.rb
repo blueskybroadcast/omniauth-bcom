@@ -50,7 +50,8 @@ module OmniAuth
 
           self.access_token = {
             :token => parsed_response['access_token'],
-            :token_expires => parsed_response['expires_in']
+            :token_expires => parsed_response['expires_in'],
+            :refresh_token => parsed_response['refresh_token']
           }
 
           self.env['omniauth.auth'] = auth_hash
