@@ -20,7 +20,8 @@ module OmniAuth
           :first_name   => raw_info['first_name'],
           :last_name    => raw_info['last_name'],
           :email        => raw_info['email'],
-          :event_codes  => raw_info['participant_event_codes']
+          :event_codes  => raw_info['participant_event_codes'],
+          :community_codes => raw_info['member_community_codes']
         }
       end
 

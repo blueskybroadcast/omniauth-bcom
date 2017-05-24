@@ -3,6 +3,19 @@ require 'httparty'
 module Omniauth
   module Api
     class Client
+      def self.get_community_member_info(user_access_token, community_code)
+        response = HTTParty.get(community_member_info_url,
+          :headers => { "Authorization" => user_access_token },
+          :query => {
+            :community_code => community_code
+          }
+        )
+
+        JSON.parse(validate(response))
+      rescue Exception => e
+        raise BcomCommunityMemberInfoError, e.message
+      end
+
       def self.get_participant_info(user_access_token, event_code)
         begin
           response = HTTParty.get(participant_info_url,
@@ -31,6 +44,10 @@ module Omniauth
       end
 
       private
+
+      def self.community_member_info_url
+        "#{Omniauth.configuration.site}#{Omniauth.configuration.community_member_info_url}"
+      end
 
       def self.participant_info_url
         "#{Omniauth.configuration.site}#{Omniauth.configuration.participant_info_url}"
